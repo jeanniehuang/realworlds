@@ -1,23 +1,21 @@
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Space+Grotesk:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
 
 :root {
-  --bg: #f3eee3;
-  --bg-deep: #e6dfd0;
-  --surface: rgba(255, 252, 245, 0.72);
-  --text: #171e30;
-  --muted: #7a6f60;
-  --muted-strong: #4f4a44;
-  --border: rgba(23, 30, 48, 0.1);
-  --shadow: 0 18px 40px rgba(46, 34, 15, 0.08);
+  --bg: #090d14;
+  --bg-deep: #04060a;
+  --text: #f7f0dd;
+  --muted: #d1c2a3;
+  --muted-strong: rgba(240, 231, 212, 0.78);
+  --accent: #f0b44e;
   --display: 'Fraunces', Georgia, serif;
-  --sans: 'Space Grotesk', 'Avenir Next', sans-serif;
+  --sans: 'IBM Plex Sans', sans-serif;
 
   font-family: var(--sans);
   line-height: 1.5;
   font-weight: 400;
   color: var(--text);
   background:
-    radial-gradient(circle at top, rgba(255, 255, 255, 0.7), transparent 38%),
+    radial-gradient(circle at top, rgba(38, 67, 117, 0.4), transparent 32%),
     linear-gradient(180deg, var(--bg), var(--bg-deep));
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -29,11 +27,9 @@
   box-sizing: border-box;
 }
 
-html {
-  scroll-behavior: smooth;
-}
-
-body {
+html,
+body,
+#root {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
@@ -45,16 +41,13 @@ body::before {
   inset: 0;
   pointer-events: none;
   background-image:
-    linear-gradient(rgba(255, 255, 255, 0.18) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.18) 1px, transparent 1px);
-  background-size: 36px 36px;
-  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.75), transparent 85%);
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 28px 28px;
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.85), transparent 90%);
 }
 
+button,
 a {
-  color: inherit;
-}
-
-#root {
-  min-height: 100vh;
+  font: inherit;
 }

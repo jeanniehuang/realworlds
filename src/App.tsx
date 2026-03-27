@@ -1,51 +1,59 @@
+import { Suspense, lazy } from 'react'
 import './App.css'
 
-const pillars = [
-  {
-    title: 'Build fast',
-    description:
-      'A lean React and TypeScript setup that is easy to extend without dragging in framework overhead.',
-  },
-  {
-    title: 'Ship anywhere',
-    description:
-      'Configured for static deployment on Netlify with a clean build pipeline and SPA routing fallback.',
-  },
-  {
-    title: 'Scale the idea',
-    description:
-      'Use this as the foundation for content, commerce, community, or whatever Realworlds becomes next.',
-  },
-]
+const HeadTrackedBedroom = lazy(async () => {
+  const module = await import('./components/HeadTrackedBedroom.tsx')
+  return { default: module.HeadTrackedBedroom }
+})
 
 function App() {
   return (
-    <main className="page-shell">
-      <section className="hero-panel">
-        <p className="eyebrow">Netlify-ready web project</p>
-        <h1>Realworlds</h1>
-        <p className="hero-copy">
-          A launchpad for digital spaces, stories, and products that need a fast
-          path from concept to the public web.
-        </p>
-        <div className="hero-actions">
-          <a className="button button-primary" href="https://app.netlify.com/start">
-            Deploy on Netlify
-          </a>
-          <a className="button button-secondary" href="#foundations">
-            Explore the foundation
-          </a>
-        </div>
+    <main className="app-shell">
+      <section className="viewer-panel">
+        <Suspense
+          fallback={
+            <div className="scene-shell">
+              <div className="viewer-overlay">
+                <strong>Preparing renderer</strong>
+                <span>Loading MediaPipe, Three.js, and Spark…</span>
+              </div>
+            </div>
+          }
+        >
+          <HeadTrackedBedroom />
+        </Suspense>
       </section>
 
-      <section className="pillars" id="foundations" aria-label="Project foundations">
-        {pillars.map((pillar) => (
-          <article className="pillar-card" key={pillar.title}>
-            <p className="pillar-index">0{pillars.indexOf(pillar) + 1}</p>
-            <h2>{pillar.title}</h2>
-            <p>{pillar.description}</p>
+      <section className="info-panel">
+        <p className="eyebrow">MediaPipe + Three.js + Spark</p>
+        <h1>Realworlds Bedroom Portal</h1>
+        <p className="lede">
+          A head-tracked off-axis renderer that turns Van Gogh&apos;s bedroom into
+          a splatted 3D window. Move your head and the camera frustum shifts with
+          you.
+        </p>
+
+        <div className="info-grid">
+          <article className="info-card">
+            <h2>How it works</h2>
+            <ul>
+              <li>MediaPipe tracks dense face landmarks from your webcam feed.</li>
+              <li>Eye spacing and nose position estimate lateral and depth motion.</li>
+              <li>Smoothing filters remove jitter before updating the camera.</li>
+              <li>The bedroom OBJ is resampled into gaussian splats for Spark.</li>
+            </ul>
           </article>
-        ))}
+
+          <article className="info-card">
+            <h2>Controls</h2>
+            <ul>
+              <li>Allow webcam access when prompted.</li>
+              <li>Keep your face centered for a second to calibrate depth.</li>
+              <li>Lean left, right, up, and down to explore the room.</li>
+              <li>Step closer to increase parallax and farther to reduce it.</li>
+            </ul>
+          </article>
+        </div>
       </section>
     </main>
   )

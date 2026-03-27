@@ -1,24 +1,37 @@
 # Realworlds
 
-Realworlds is a Vite + React + TypeScript web project set up for deployment on Netlify.
+Head-tracked off-axis rendering demo built with React, Three.js, Spark gaussian splats, and MediaPipe face tracking.
 
-## Local development
+## What it does
+
+- Loads the Van Gogh bedroom OBJ scene from [`public/models/van-gogh-bedroom`](/Users/jehuang/realworlds/public/models/van-gogh-bedroom)
+- Resamples the mesh and textures into gaussian splats at runtime with Spark
+- Tracks the user face with MediaPipe and estimates head position from dense landmarks
+- Updates the Three.js camera frustum for a window-into-a-world parallax effect
+
+## Development
 
 ```bash
 npm install
 npm run dev
 ```
 
-## Production build
+## Build
 
 ```bash
 npm run build
+npm run preview
 ```
 
 ## Netlify
 
-This repo includes a [`netlify.toml`](/Users/jehuang/realworlds/netlify.toml) file with:
+This repo is already configured for Netlify in [`netlify.toml`](/Users/jehuang/realworlds/netlify.toml):
 
-- `npm run build` as the build command
-- `dist` as the publish directory
-- a redirect rule for single-page app routing
+- Build command: `npm run build`
+- Publish directory: `dist`
+
+## Notes
+
+- Webcam permission is required for head tracking.
+- The MediaPipe face landmarker model is bundled locally at [`public/models/mediapipe/face_landmarker.task`](/Users/jehuang/realworlds/public/models/mediapipe/face_landmarker.task).
+- The viewer bundle is large because it includes MediaPipe, Three.js loaders, and Spark, but it is lazy-loaded so the initial shell stays smaller.
