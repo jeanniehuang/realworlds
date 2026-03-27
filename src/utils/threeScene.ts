@@ -54,12 +54,39 @@ export class ThreeSceneManager {
       antialias: true,
       alpha: false
     });
+    this.renderer.setClearColor(0x1a1a1a, 1);
     this.renderer.setSize(width, height);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.renderer.domElement.style.position = 'absolute';
+    this.renderer.domElement.style.top = '0';
+    this.renderer.domElement.style.left = '50%';
+    this.renderer.domElement.style.transform = 'translateX(-50%)';
     options.container.appendChild(this.renderer.domElement);
 
+    this.updateRenderFrame(width, height);
     this.loadModel();
     this.createDebugHelpers();
+  }
+
+  private updateRenderFrame(width: number, height: number): void {
+    const aspect = calibrationManager.getScreenAspectRatio();
+    const useFullViewport = width >= height * aspect;
+    const renderWidth = useFullViewport ? width : Math.round(height * aspect);
+    const renderHeight = useFullViewport ? height : height;
+
+    this.camera.aspect = renderWidth / renderHeight;
+    this.camera.updateProjectionMatrix();
+    this.renderer.setSize(renderWidth, renderHeight, false);
+    this.renderer.domElement.style.width = `${renderWidth}px`;
+    this.renderer.domElement.style.height = `${renderHeight}px`;
+    this.renderer.domElement.style.left = useFullViewport ? '0' : '50%';
+    this.renderer.domElement.style.transform = useFullViewport ? 'none' : 'translateX(-50%)';
+
+    const calibration = calibrationManager.getCalibration();
+    calibration.pixelWidth = renderWidth;
+    calibration.pixelHeight = renderHeight;
+    calibrationManager.updatePixelDimensions(renderWidth, renderHeight);
+    this.offAxisCamera.updateCalibration(calibration);
   }
 
   private loadModel(): void {
@@ -166,6 +193,10 @@ export class ThreeSceneManager {
 
   updateCalibration(calibration: CalibrationData): void {
     this.offAxisCamera.updateCalibration(calibration);
+    const parent = this.renderer.domElement.parentElement;
+    if (parent) {
+      this.updateRenderFrame(parent.clientWidth, parent.clientHeight);
+    }
   }
 
   updateModelPosition(x: number, y: number, z: number): void {
@@ -246,9 +277,7 @@ export class ThreeSceneManager {
   }
 
   resize(width: number, height: number): void {
-    this.camera.aspect = width / height;
-    this.camera.updateProjectionMatrix();
-    this.renderer.setSize(width, height);
+    this.updateRenderFrame(width, height);
   }
 
   dispose(): void {

@@ -15,6 +15,7 @@ const defaultModelScale = isDrawingRoute ? 0.3 : 0.101;
 const defaultModelRotation = isDrawingRoute
   ? { x: Math.PI, y: 0, z: 0 }
   : { x: 0, y: 0, z: 0 };
+const previewFrameClass = 'w-64 h-48 rounded-lg overflow-hidden shadow-2xl border-2 border-white bg-black';
 
 function App() {
   const [isCdnAvailable, setIsCdnAvailable] = useState(true);
@@ -195,8 +196,18 @@ function App() {
           initialRotation={shoeRotation}
         />
 
-        <div className="absolute bottom-4 right-4 z-10 rounded-lg overflow-hidden shadow-2xl border-2 border-white">
-          <div className="w-64 h-48">
+        <div className="absolute bottom-4 right-4 z-10 flex flex-col gap-3">
+          {isDrawingRoute && (
+            <div className={previewFrameClass}>
+              <img
+                src="/reference/drawing-reference.jpg"
+                alt="Van Gogh bedroom reference drawing"
+                className="w-full h-full object-cover"
+              />
+            </div>
+          )}
+
+          <div className={previewFrameClass}>
             <FaceMeshView onHeadPoseUpdate={handleHeadPoseUpdate} />
           </div>
         </div>
