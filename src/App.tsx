@@ -1,62 +1,228 @@
-import { Suspense, lazy } from 'react'
-import './App.css'
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Maximize, Minimize } from 'lucide-react';
+import FaceMeshView from './components/FaceMeshView';
+import ThreeView, { ThreeViewHandle } from './components/ThreeView';
+import CalibrationWizard from './components/CalibrationWizard';
+import ShoeControlPanel from './components/ShoeControlPanel';
+import { HeadPose, HeadPoseTracker } from './utils/headPose';
+import { calibrationManager, CalibrationData } from './utils/calibration';
 
-const HeadTrackedBedroom = lazy(async () => {
-  const module = await import('./components/HeadTrackedBedroom.tsx')
-  return { default: module.HeadTrackedBedroom }
-})
+const isDrawingRoute = window.location.pathname.startsWith('/drawing');
+const defaultModelPosition = isDrawingRoute
+  ? { x: -0.01, y: -0.01, z: 0.37 }
+  : { x: 0.01, y: -0.12, z: -0.381 };
+const defaultModelScale = isDrawingRoute ? 0.3 : 0.101;
+const defaultModelRotation = isDrawingRoute
+  ? { x: Math.PI, y: 0, z: 0 }
+  : { x: 0, y: 0, z: 0 };
 
 function App() {
+  const [isCdnAvailable, setIsCdnAvailable] = useState(true);
+  const [isCheckingCdn, setIsCheckingCdn] = useState(true);
+  const [currentHeadPose, setCurrentHeadPose] = useState<HeadPose | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showCalibration, setShowCalibration] = useState(false);
+  const [calibration, setCalibration] = useState<CalibrationData>(calibrationManager.getCalibration());
+  const [debugMode, setDebugMode] = useState(false);
+  const [shoePosition, setShoePosition] = useState(defaultModelPosition);
+  const [shoeScale, setShoeScale] = useState(defaultModelScale);
+  const [shoeRotation, setShoeRotation] = useState(defaultModelRotation);
+  const headPoseTrackerRef = useRef(new HeadPoseTracker(0.3));
+  const threeViewRef = useRef<ThreeViewHandle>(null);
+
+  useEffect(() => {
+    const checkCdnAvailability = async () => {
+      setIsCheckingCdn(true);
+      try {
+        const faceMeshResponse = await fetch(
+          'https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js',
+          { method: 'HEAD' }
+        );
+
+        const cameraResponse = await fetch(
+          'https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js',
+          { method: 'HEAD' }
+        );
+
+        const drawingResponse = await fetch(
+          'https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js',
+          { method: 'HEAD' }
+        );
+
+        setIsCdnAvailable(faceMeshResponse.ok && cameraResponse.ok && drawingResponse.ok);
+      } catch (error) {
+        console.error('Error checking CDN availability:', error);
+        setIsCdnAvailable(false);
+      } finally {
+        setIsCheckingCdn(false);
+      }
+    };
+
+    checkCdnAvailability();
+
+    const intervalId = setInterval(checkCdnAvailability, 60000);
+
+    return () => clearInterval(intervalId);
+  }, []);
+
+  const handleHeadPoseUpdate = useCallback((rawPose: HeadPose | null) => {
+    if (rawPose) {
+      const smoothedPose = headPoseTrackerRef.current.extractHeadPoseFromLandmarks([
+        Array(468).fill(null).map((_, i) => {
+          if (i === 133) return { x: rawPose.x - 0.05, y: rawPose.y, z: 0 };
+          if (i === 362) return { x: rawPose.x + 0.05, y: rawPose.y, z: 0 };
+          if (i === 1) return { x: rawPose.x, y: rawPose.y, z: 0 };
+          if (i === 33) return { x: rawPose.x - 0.08, y: rawPose.y, z: 0 };
+          if (i === 263) return { x: rawPose.x + 0.08, y: rawPose.y, z: 0 };
+          return { x: 0, y: 0, z: 0 };
+        })
+      ]);
+      if (smoothedPose) {
+        setCurrentHeadPose(smoothedPose);
+      }
+    } else {
+      setCurrentHeadPose(null);
+    }
+  }, []);
+
+  const toggleFullscreen = useCallback(async () => {
+    if (!document.fullscreenElement) {
+      try {
+        await document.documentElement.requestFullscreen();
+        setIsFullscreen(true);
+      } catch (error) {
+        console.error('Error entering fullscreen:', error);
+      }
+    } else {
+      try {
+        await document.exitFullscreen();
+        setIsFullscreen(false);
+      } catch (error) {
+        console.error('Error exiting fullscreen:', error);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+
+  useEffect(() => {
+    if (!calibrationManager.isCalibrated()) {
+      setShowCalibration(true);
+    }
+  }, []);
+
+  const handleCalibrationComplete = (newCalibration: CalibrationData) => {
+    setCalibration(newCalibration);
+    if (threeViewRef.current) {
+      threeViewRef.current.updateCalibration(newCalibration);
+    }
+  };
+
+  const toggleDebugMode = () => {
+    const newDebugMode = !debugMode;
+    setDebugMode(newDebugMode);
+    if (threeViewRef.current) {
+      threeViewRef.current.setDebugMode(newDebugMode);
+    }
+  };
+
+  const handleShoePositionChange = (x: number, y: number, z: number) => {
+    setShoePosition({ x, y, z });
+    if (threeViewRef.current) {
+      threeViewRef.current.updateModelPosition(x, y, z);
+    }
+  };
+
+  const handleShoeScaleChange = (scale: number) => {
+    setShoeScale(scale);
+    if (threeViewRef.current) {
+      threeViewRef.current.updateModelScale(scale);
+    }
+  };
+
+  const handleShoeRotationChange = (x: number, y: number, z: number) => {
+    setShoeRotation({ x, y, z });
+    if (threeViewRef.current) {
+      threeViewRef.current.updateModelRotation(x, y, z);
+    }
+  };
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (threeViewRef.current) {
+        const pos = threeViewRef.current.getModelPosition();
+        const scale = threeViewRef.current.getModelScale();
+        const rot = threeViewRef.current.getModelRotation();
+        setShoePosition(pos);
+        setShoeScale(scale);
+        setShoeRotation(rot);
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
-    <main className="app-shell">
-      <section className="viewer-panel">
-        <Suspense
-          fallback={
-            <div className="scene-shell">
-              <div className="viewer-overlay">
-                <strong>Preparing renderer</strong>
-                <span>Loading MediaPipe, Three.js, and Spark…</span>
-              </div>
-            </div>
-          }
-        >
-          <HeadTrackedBedroom />
-        </Suspense>
-      </section>
+    <div className="min-h-screen bg-gray-900 flex flex-col relative">
+      <main className="flex-1 relative">
+        {!isCheckingCdn && !isCdnAvailable && (
+          <div className="absolute top-4 left-4 right-4 z-30 max-w-2xl mx-auto p-3 bg-yellow-50 text-yellow-800 rounded-md">
+            <p className="text-sm">
+              We're having trouble connecting to the required resources. Please check your internet connection.
+            </p>
+          </div>
+        )}
 
-      <section className="info-panel">
-        <p className="eyebrow">MediaPipe + Three.js + Spark</p>
-        <h1>Realworlds Bedroom Portal</h1>
-        <p className="lede">
-          A head-tracked off-axis renderer that turns Van Gogh&apos;s bedroom into
-          a splatted 3D window. Move your head and the camera frustum shifts with
-          you.
-        </p>
-
-        <div className="info-grid">
-          <article className="info-card">
-            <h2>How it works</h2>
-            <ul>
-              <li>MediaPipe tracks dense face landmarks from your webcam feed.</li>
-              <li>Eye spacing and nose position estimate lateral and depth motion.</li>
-              <li>Smoothing filters remove jitter before updating the camera.</li>
-              <li>The bedroom OBJ is resampled into gaussian splats for Spark.</li>
-            </ul>
-          </article>
-
-          <article className="info-card">
-            <h2>Controls</h2>
-            <ul>
-              <li>Allow webcam access when prompted.</li>
-              <li>Keep your face centered for a second to calibrate depth.</li>
-              <li>Lean left, right, up, and down to explore the room.</li>
-              <li>Step closer to increase parallax and farther to reduce it.</li>
-            </ul>
-          </article>
+        <div className="absolute inset-0">
+          <ThreeView
+            headPose={currentHeadPose}
+            ref={threeViewRef}
+          />
         </div>
-      </section>
-    </main>
-  )
+
+        <ShoeControlPanel
+          onPositionChange={handleShoePositionChange}
+          onScaleChange={handleShoeScaleChange}
+          onRotationChange={handleShoeRotationChange}
+          initialPosition={shoePosition}
+          initialScale={shoeScale}
+          initialRotation={shoeRotation}
+        />
+
+        <div className="absolute bottom-4 right-4 z-10 rounded-lg overflow-hidden shadow-2xl border-2 border-white">
+          <div className="w-64 h-48">
+            <FaceMeshView onHeadPoseUpdate={handleHeadPoseUpdate} />
+          </div>
+        </div>
+
+        <div className="absolute bottom-4 left-4 z-10 flex flex-col gap-2">
+          <button
+            onClick={toggleFullscreen}
+            className="p-1.5 bg-black bg-opacity-50 hover:bg-opacity-70 text-white rounded transition-colors backdrop-blur-sm"
+            aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+            title={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+          >
+            {isFullscreen ? <Minimize size={14} /> : <Maximize size={14} />}
+          </button>
+
+        </div>
+      </main>
+
+      {showCalibration && (
+        <CalibrationWizard
+          onComplete={handleCalibrationComplete}
+          onSkip={() => setShowCalibration(false)}
+          onClose={() => setShowCalibration(false)}
+        />
+      )}
+    </div>
+  );
 }
 
-export default App
+export default App;
