@@ -1,0 +1,149 @@
+.page-shell {
+  min-height: 100vh;
+  padding: 32px;
+  display: grid;
+  gap: 28px;
+}
+
+.hero-panel,
+.pillar-card {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 28px;
+  backdrop-filter: blur(16px);
+  box-shadow: var(--shadow);
+}
+
+.hero-panel {
+  min-height: 72vh;
+  padding: clamp(2rem, 4vw, 4rem);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 1.5rem;
+  background:
+    radial-gradient(circle at top left, rgba(255, 196, 82, 0.32), transparent 30%),
+    radial-gradient(circle at 80% 20%, rgba(41, 115, 255, 0.26), transparent 28%),
+    linear-gradient(135deg, rgba(247, 243, 233, 0.92), rgba(255, 255, 255, 0.7));
+}
+
+.hero-panel::after {
+  content: '';
+  position: absolute;
+  inset: auto -10% -18% auto;
+  width: min(38vw, 420px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: linear-gradient(180deg, rgba(197, 87, 42, 0.18), rgba(197, 87, 42, 0));
+  filter: blur(4px);
+}
+
+.eyebrow,
+.pillar-index {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 0.78rem;
+}
+
+.eyebrow {
+  color: var(--muted);
+}
+
+h1 {
+  margin: 0;
+  max-width: 10ch;
+  font-family: var(--display);
+  font-size: clamp(4rem, 10vw, 8rem);
+  line-height: 0.92;
+  letter-spacing: -0.06em;
+}
+
+.hero-copy {
+  max-width: 34rem;
+  margin: 0;
+  font-size: clamp(1.05rem, 2vw, 1.3rem);
+  line-height: 1.6;
+  color: var(--muted-strong);
+}
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.9rem;
+  z-index: 1;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 3.25rem;
+  padding: 0 1.25rem;
+  border-radius: 999px;
+  text-decoration: none;
+  font-weight: 600;
+  transition:
+    transform 180ms ease,
+    background-color 180ms ease,
+    border-color 180ms ease;
+}
+
+.button:hover {
+  transform: translateY(-1px);
+}
+
+.button-primary {
+  color: #fff8ef;
+  background: #1f4ed8;
+}
+
+.button-primary:hover {
+  background: #173aa1;
+}
+
+.button-secondary {
+  color: var(--text);
+  border: 1px solid rgba(23, 30, 48, 0.12);
+  background: rgba(255, 255, 255, 0.58);
+}
+
+.pillars {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.pillar-card {
+  min-height: 260px;
+  padding: 1.6rem;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.pillar-card h2 {
+  margin: 2.75rem 0 0.85rem;
+  font-size: 1.55rem;
+  line-height: 1.05;
+}
+
+.pillar-card p:last-child {
+  margin: 0;
+  color: var(--muted-strong);
+  line-height: 1.65;
+}
+
+@media (max-width: 960px) {
+  .page-shell {
+    padding: 18px;
+  }
+
+  .hero-panel {
+    min-height: auto;
+    padding-top: 5rem;
+  }
+
+  .pillars {
+    grid-template-columns: 1fr;
+  }
+}
